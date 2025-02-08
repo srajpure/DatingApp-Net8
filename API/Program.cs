@@ -1,19 +1,36 @@
 using API.Data;
+using API.Extenstions;
+using API.Interfaces;
+using API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddDbContext<DataContext>( opt =>
+builder.Services.AddCors((options =>
 {
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
+    options.AddPolicy(name: "MyAllowSpecificOrigins",
+                      policy =>
+                      {
+                          policy.WithOrigins("http://localhost:4200") // Allow requests from Angular
+                                .AllowAnyHeader() // or specify allowed headers
+                                .AllowAnyMethod(); // or specify allowed methods
+                      });
+}));
+
+builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddIdentityServices(builder.Configuration);
 
 var app = builder.Build();
+
+app.UseCors("MyAllowSpecificOrigins");
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
